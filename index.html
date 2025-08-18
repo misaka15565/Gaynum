@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>名字Gay指数计算器</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- pinyin-pro for Chinese to Pinyin -->
-    <script src="https://unpkg.com/pinyin-pro@3.18.5/dist/pinyin-pro.js"></script>
-    <!-- wanakana for Japanese to Romaji -->
-    <script src="https://unpkg.com/wanakana"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin/2.11.2/pinyin.js" integrity="sha512-pL+fEP3lwsoiFUy3s/f420s7P9VAWCbXq5F/xKAiZQbxi5O73T3+vQBEU2202pLhbWv9J1Ksnq6FnzY3p3vO+A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wanakana@5.3.1/dist/wanakana.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -92,223 +92,159 @@
     </div>
 
     <script>
-        const nameInput = document.getElementById('nameInput');
-        const calculateBtn = document.getElementById('calculateBtn');
-        const btnText = document.getElementById('btnText');
-        const btnSpinner = document.getElementById('btnSpinner');
-        
-        const resultSection = document.getElementById('resultSection');
-        const resultName = document.getElementById('resultName');
-        const progressBar = document.getElementById('progressBar');
-        const percentageText = document.getElementById('percentageText');
-        const resultMessage = document.getElementById('resultMessage');
-
-        // --- Core Calculation Logic ---
-
-        function normalizeName(name) {
-            let processedName = name.trim().toLowerCase();
+        window.onload = function() {
+            const nameInput = document.getElementById('nameInput');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
             
-            if (/[\u4e00-\u9fa5]/.test(processedName)) {
-                processedName = pinyinPro.pinyin(processedName, { toneType: 'none', type: 'string' });
-            }
-            else if (wanakana.isJapanese(processedName)) {
-                processedName = wanakana.toRomaji(processedName);
-            }
-            
-            const letters = processedName.replace(/[^a-z]/g, '');
-            const numbers = processedName.replace(/[^0-9]/g, '');
+            const resultSection = document.getElementById('resultSection');
+            const resultName = document.getElementById('resultName');
+            const progressBar = document.getElementById('progressBar');
+            const percentageText = document.getElementById('percentageText');
+            const resultMessage = document.getElementById('resultMessage');
 
-            return { letters, numbers };
-        }
-
-        function getNumericValues(normalizedParts) {
-            const letterValues = normalizedParts.letters.split('').map(char => char.charCodeAt(0) - 96);
-            const numberSum = normalizedParts.numbers.split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
-            return { letterValues, numberSum };
-        }
-
-        function matrixCalculation(values, originalName) {
-            const { letterValues, numberSum } = values;
-            if (letterValues.length === 0 && numberSum === 0) return 0;
-
-            const letterSum = letterValues.reduce((acc, val) => acc + val, 0);
-            const totalSum = letterSum + numberSum;
-            const magicConstant = originalName.length * 7;
-
-            let hash;
-            if (letterValues.length > 0) {
-                hash = (letterValues[0] * (letterValues[letterValues.length - 1] || 1));
-            } else {
-                hash = numberSum * 13;
-            }
-
-            const result = (totalSum * magicConstant + hash) % 101;
-            return result;
-        }
-
-
-        // --- UI and Event Handling ---
-        
-        // --- UPDATED: Richer and Randomized Result Messages ---
-        function getResultMessage(percentage) {
-            const messageTiers = {
-                0: [
-                    "0%... 你是直尺成精了吗？",
-                    "零！你的世界里连彩虹都是黑白的吗？",
-                    "成分过纯，建议去钢铁厂上班。",
-                    "比我的银行余额还直，令人敬畏。",
-                    "检测不到任何弯的迹象，程序可能出错了。"
-                ],
-                10: [
-                    "钢铁直男/女，宇宙都掰不弯你。",
-                    "你走过的路，比笔还直。",
-                    "身上充满了‘直’气，妖魔鬼怪都得退散。",
-                    "别说弯了，你连转个弯都费劲。",
-                    "堪称异性恋的最后一道防线。"
-                ],
-                20: [
-                    "直得有点刻意了，是不是在伪装？",
-                    "指数这么低，是不是对同性有什么误解？",
-                    "你大概是那种‘啊？他俩是gay？’的迟钝类型。",
-                    "你的世界简单得像一条直线。",
-                    "朋友，恐同即深柜，再测测？"
-                ],
-                40: [
-                    "内心可能有点小波动，但无伤大雅。",
-                    "偶尔会觉得‘同性也挺可爱的嘛’的程度。",
-                    "雷达偶尔会收到微弱信号，但很快就忽略了。",
-                    "在弯的边缘试探，但又缩回了脚。",
-                    "一只脚还在柜外，另一只脚在门槛上摩擦。"
-                ],
-                60: [
-                    "有点意思，雷达的指针动了一下。",
-                    "已经开始对一些特定类型的同性产生欣赏了。",
-                    "你离出柜，就差一个契机。",
-                    "嘴上说着不要，身体却很诚实。",
-                    "是时候更新一下你的交友软件筛选器了。"
-                ],
-                80: [
-                    "别装了，你的品味出卖了你！",
-                    "Gay达已经开始报警，只是声音比较小。",
-                    "你怕不是通讯录里的常驻嘉宾？",
-                    "说吧，你的理想型是体育生还是艺术生？",
-                    "看到帅哥/美女会心跳加速，不分性别。"
-                ],
-                90: [
-                    "衣柜门都快关不住了吧！",
-                    "姬达/Gay达信号强度已爆表！",
-                    "下一步是不是就要统治通讯录了？",
-                    "你弯得像盘蚊香，还带电的那种。",
-                    "别点了，自己人，快开门！"
-                ],
-                100: [
-                    "警报！已无需鉴定，天生的弯！",
-                    "你就是彩虹本虹！",
-                    "恭喜！你已解锁‘通讯录天花板’成就！",
-                    "弯得彻底，连影子都是弯的。",
-                    "出厂设置就是弯的，别挣扎了。"
-                ]
-            };
-
-            let selectedTier;
-            if (percentage === 0) selectedTier = messageTiers[0];
-            else if (percentage <= 10) selectedTier = messageTiers[10];
-            else if (percentage <= 20) selectedTier = messageTiers[20];
-            else if (percentage <= 40) selectedTier = messageTiers[40];
-            else if (percentage <= 60) selectedTier = messageTiers[60];
-            else if (percentage <= 80) selectedTier = messageTiers[80];
-            else if (percentage <= 99) selectedTier = messageTiers[99];
-            else selectedTier = messageTiers[100];
-
-            // Randomly pick one message from the selected tier
-            const randomIndex = Math.floor(Math.random() * selectedTier.length);
-            return selectedTier[randomIndex];
-        }
-        
-        function getProgressBarColor(percentage) {
-            const colors = [
-                { p: 0, color: '#3b82f6' },   // blue
-                { p: 25, color: '#22c55e' },  // green
-                { p: 50, color: '#eab308' },  // yellow
-                { p: 75, color: '#f97316' },  // orange
-                { p: 100, color: '#d946ef' }  // fuchsia
-            ];
-            
-            for (let i = 1; i < colors.length; i++) {
-                if (percentage <= colors[i].p) {
-                    const p1 = colors[i-1].p; const p2 = colors[i].p;
-                    const c1 = colors[i-1].color; const c2 = colors[i].color;
-                    const factor = (percentage - p1) / (p2 - p1);
-                    const r1 = parseInt(c1.substring(1, 3), 16), g1 = parseInt(c1.substring(3, 5), 16), b1 = parseInt(c1.substring(5, 7), 16);
-                    const r2 = parseInt(c2.substring(1, 3), 16), g2 = parseInt(c2.substring(3, 5), 16), b2 = parseInt(c2.substring(5, 7), 16);
-                    const r = Math.round(r1 + factor * (r2 - r1));
-                    const g = Math.round(g1 + factor * (g2 - g1));
-                    const b = Math.round(b1 + factor * (b2 - b1));
-                    return `rgb(${r},${g},${b})`;
+            function normalizeName(name) {
+                let processedName = name.trim().toLowerCase();
+                
+                if (/[\u4e00-\u9fa5]/.test(processedName)) {
+                    processedName = pinyin(processedName, {
+                        style: pinyin.STYLE_NORMAL 
+                    }).flat().join('');
                 }
-            }
-            return colors[colors.length - 1].color;
-        }
+                else if (wanakana.isJapanese(processedName)) {
+                    processedName = wanakana.toRomaji(processedName);
+                }
+                
+                const letters = processedName.replace(/[^a-z]/g, '');
+                const numbers = processedName.replace(/[^0-9]/g, '');
 
-        function displayResult(name, percentage) {
-            resultName.textContent = name;
-            resultSection.classList.remove('hidden');
-            percentageText.style.opacity = 0;
-            resultMessage.style.opacity = 0;
-            percentageText.classList.remove('fade-in-up', 'rainbow-100');
-            resultMessage.classList.remove('fade-in-up');
+                return { letters, numbers };
+            }
+
+            function getNumericValues(normalizedParts) {
+                const letterValues = normalizedParts.letters.split('').map(char => char.charCodeAt(0) - 96);
+                const numberSum = normalizedParts.numbers.split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+                return { letterValues, numberSum };
+            }
+
+            function matrixCalculation(values, originalName) {
+                const { letterValues, numberSum } = values;
+                if (letterValues.length === 0 && numberSum === 0) return 0;
+
+                const letterSum = letterValues.reduce((acc, val) => acc + val, 0);
+                const totalSum = letterSum + numberSum;
+                const magicConstant = originalName.length * 7;
+
+                let hash;
+                if (letterValues.length > 0) {
+                    hash = (letterValues[0] * (letterValues[letterValues.length - 1] || 1));
+                } else {
+                    hash = numberSum * 13;
+                }
+
+                const result = (totalSum * magicConstant + hash) % 101;
+                return result;
+            }
+
+            function getResultMessage(percentage) {
+                const messageTiers = {
+                    0: [ "0%... 你是直尺成精了吗？", "零！你的世界里连彩虹都是黑白的吗？", "成分过纯，建议去钢铁厂上班。", "比我的银行余额还直，令人敬畏。", "检测不到任何弯的迹象，程序可能出错了。" ],
+                    10: [ "钢铁直男/女，宇宙都掰不弯你。", "你走过的路，比笔还直。", "身上充满了‘直’气，妖魔鬼怪都得退散。", "别说弯了，你连转个弯都费劲。", "堪称异性恋的最后一道防线。" ],
+                    20: [ "直得有点刻意了，是不是在伪装？", "指数这么低，是不是对同性有什么误解？", "你大概是那种‘啊？他俩是gay？’的迟钝类型。", "你的世界简单得像一条直线。", "朋友，恐同即深柜，再测测？" ],
+                    40: [ "内心可能有点小波动，但无伤大雅。", "偶尔会觉得‘同性也挺可爱的嘛’的程度。", "雷达偶尔会收到微弱信号，但很快就忽略了。", "在弯的边缘试探，但又缩回了脚。", "一只脚还在柜外，另一只脚在门槛上摩擦。" ],
+                    60: [ "有点意思，雷达的指针动了一下。", "已经开始对一些特定类型的同性产生欣赏了。", "你离出柜，就差一个契机。", "嘴上说着不要，身体却很诚实。", "是时候更新一下你的交友软件筛选器了。" ],
+                    80: [ "别装了，你的品味出卖了你！", "Gay达已经开始报警，只是声音比较小。", "你怕不是通讯录里的常驻嘉宾？", "说吧，你的理想型是体育生还是艺术生？", "看到帅哥/美女会心跳加速，不分性别。" ],
+                    99: [ "衣柜门都快关不住了吧！", "姬达/Gay达信号强度已爆表！", "下一步是不是就要统治通讯录了？", "你弯得像盘蚊香，还带电的那种。", "别点了，自己人，快开门！" ],
+                    100: [ "警报！已无需鉴定，天生的弯！", "你就是彩虹本虹！", "恭喜！你已解锁‘通讯录天花板’成就！", "弯得彻底，连影子都是弯的。", "出厂设置就是弯的，别挣扎了。" ]
+                };
+                let selectedTier;
+                if (percentage === 0) selectedTier = messageTiers[0];
+                else if (percentage <= 10) selectedTier = messageTiers[10];
+                else if (percentage <= 20) selectedTier = messageTiers[20];
+                else if (percentage <= 40) selectedTier = messageTiers[40];
+                else if (percentage <= 60) selectedTier = messageTiers[60];
+                else if (percentage <= 80) selectedTier = messageTiers[80];
+                else if (percentage <= 99) selectedTier = messageTiers[99];
+                else selectedTier = messageTiers[100];
+                const randomIndex = Math.floor(Math.random() * selectedTier.length);
+                return selectedTier[randomIndex];
+            }
             
-            let currentPercent = -1;
-            const interval = setInterval(() => {
-                currentPercent++;
-                if (currentPercent >= percentage) {
-                    clearInterval(interval);
-                    currentPercent = percentage;
-                    percentageText.textContent = `${currentPercent}%`; // Final update
-                    percentageText.classList.add('fade-in-up');
-                    resultMessage.textContent = getResultMessage(percentage);
-                    resultMessage.classList.add('fade-in-up');
-                    resultMessage.style.animationDelay = '0.2s';
-                    if (currentPercent === 100) {
-                        percentageText.classList.add('rainbow-100');
+            function getProgressBarColor(percentage) {
+                const colors = [ { p: 0, color: '#3b82f6' }, { p: 25, color: '#22c55e' }, { p: 50, color: '#eab308' }, { p: 75, color: '#f97316' }, { p: 100, color: '#d946ef' } ];
+                for (let i = 1; i < colors.length; i++) {
+                    if (percentage <= colors[i].p) {
+                        const p1 = colors[i-1].p; const p2 = colors[i].p; const c1 = colors[i-1].color; const c2 = colors[i].color;
+                        const factor = (p2 - p1 === 0) ? 1 : (percentage - p1) / (p2 - p1);
+                        const r1 = parseInt(c1.substring(1, 3), 16), g1 = parseInt(c1.substring(3, 5), 16), b1 = parseInt(c1.substring(5, 7), 16);
+                        const r2 = parseInt(c2.substring(1, 3), 16), g2 = parseInt(c2.substring(3, 5), 16), b2 = parseInt(c2.substring(5, 7), 16);
+                        const r = Math.round(r1 + factor * (r2 - r1)); const g = Math.round(g1 + factor * (g2 - g1)); const b = Math.round(b1 + factor * (b2 - b1));
+                        return `rgb(${r},${g},${b})`;
                     }
                 }
-                progressBar.style.width = `${currentPercent}%`;
-                progressBar.style.backgroundColor = getProgressBarColor(currentPercent);
-                if (currentPercent !== -1) {
-                    percentageText.textContent = `${currentPercent}%`;
+                return colors[colors.length - 1].color;
+            }
+
+            function displayResult(name, percentage) {
+                resultName.textContent = name;
+                resultSection.classList.remove('hidden');
+                percentageText.style.opacity = 0;
+                resultMessage.style.opacity = 0;
+                percentageText.classList.remove('fade-in-up', 'rainbow-100');
+                resultMessage.classList.remove('fade-in-up');
+                let currentPercent = -1;
+                const interval = setInterval(() => {
+                    currentPercent++;
+                    if (currentPercent >= percentage) {
+                        clearInterval(interval);
+                        currentPercent = percentage;
+                        percentageText.textContent = `${currentPercent}%`;
+                        percentageText.classList.add('fade-in-up');
+                        resultMessage.textContent = getResultMessage(percentage);
+                        resultMessage.classList.add('fade-in-up');
+                        resultMessage.style.animationDelay = '0.2s';
+                        if (currentPercent === 100) {
+                            percentageText.classList.add('rainbow-100');
+                        }
+                    }
+                    progressBar.style.width = `${currentPercent}%`;
+                    progressBar.style.backgroundColor = getProgressBarColor(currentPercent);
+                    if (currentPercent !== -1) {
+                        percentageText.textContent = `${currentPercent}%`;
+                    }
+                }, 20);
+            }
+
+            function handleCalculation() {
+                const originalName = nameInput.value;
+                if (!originalName.trim()) {
+                    nameInput.classList.add('shake');
+                    setTimeout(() => nameInput.classList.remove('shake'), 500);
+                    return;
                 }
-            }, 20);
-        }
-
-        function handleCalculation() {
-            const originalName = nameInput.value;
-            if (!originalName.trim()) {
-                nameInput.classList.add('shake');
-                setTimeout(() => nameInput.classList.remove('shake'), 500);
-                return;
+                btnText.classList.add('hidden');
+                btnSpinner.classList.remove('hidden');
+                calculateBtn.disabled = true;
+                resultSection.classList.add('hidden');
+                setTimeout(() => {
+                    const normalizedParts = normalizeName(originalName);
+                    const numericValues = getNumericValues(normalizedParts);
+                    const finalPercentage = matrixCalculation(numericValues, originalName);
+                    displayResult(originalName, finalPercentage);
+                    btnText.classList.remove('hidden');
+                    btnSpinner.classList.add('hidden');
+                    calculateBtn.disabled = false;
+                }, 800);
             }
-            btnText.classList.add('hidden');
-            btnSpinner.classList.remove('hidden');
-            calculateBtn.disabled = true;
-            resultSection.classList.add('hidden');
-            setTimeout(() => {
-                const normalizedParts = normalizeName(originalName);
-                const numericValues = getNumericValues(normalizedParts);
-                const finalPercentage = matrixCalculation(numericValues, originalName);
-                displayResult(originalName, finalPercentage);
-                btnText.classList.remove('hidden');
-                btnSpinner.classList.add('hidden');
-                calculateBtn.disabled = false;
-            }, 800);
-        }
 
-        calculateBtn.addEventListener('click', handleCalculation);
-        nameInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                handleCalculation();
-            }
-        });
+            calculateBtn.addEventListener('click', handleCalculation);
+            nameInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    handleCalculation();
+                }
+            });
+        };
     </script>
 </body>
 </html>
