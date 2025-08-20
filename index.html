@@ -164,8 +164,8 @@
                 else if (percentage <= 20) selectedTier = messageTiers[20];
                 else if (percentage <= 40) selectedTier = messageTiers[40];
                 else if (percentage <= 60) selectedTier = messageTiers[60];
-                else if (percentage <= 80) selectedTier = messageTiers[80];
-                else if (percentage <= 99) selectedTier = messageTiers[99];
+                else if (percentage <= 75) selectedTier = messageTiers[75];
+                else if (percentage <= 90) selectedTier = messageTiers[90];
                 else selectedTier = messageTiers[100];
                 const randomIndex = Math.floor(Math.random() * selectedTier.length);
                 return selectedTier[randomIndex];
