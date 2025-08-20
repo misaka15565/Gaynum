@@ -118,22 +118,24 @@
                 
                 const letters = processedName.replace(/[^a-z]/g, '');
                 const numbers = processedName.replace(/[^0-9]/g, '');
+                const specials = processedName.replace(/[a-z0-9]/g, '');
 
-                return { letters, numbers };
+                return { letters, numbers, specials };
             }
 
             function getNumericValues(normalizedParts) {
                 const letterValues = normalizedParts.letters.split('').map(char => char.charCodeAt(0) - 96);
                 const numberSum = normalizedParts.numbers.split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0);
-                return { letterValues, numberSum };
+                const specialSum = normalizedParts.specials.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                return { letterValues, numberSum, specialSum };
             }
 
             function matrixCalculation(values, originalName) {
-                const { letterValues, numberSum } = values;
-                if (letterValues.length === 0 && numberSum === 0) return 0;
+                const { letterValues, numberSum, specialSum } = values;
+                if (letterValues.length === 0 && numberSum === 0 && specialSum === 0) return 0;
 
                 const letterSum = letterValues.reduce((acc, val) => acc + val, 0);
-                const totalSum = letterSum + numberSum;
+                const totalSum = letterSum + numberSum + specialSum;
                 const magicConstant = originalName.length * 7;
 
                 let hash;
@@ -142,8 +144,12 @@
                 } else {
                     hash = numberSum * 13;
                 }
+                hash += specialSum * 17;
 
-                const result = (totalSum * magicConstant + hash) % 101;
+                let result = (totalSum * magicConstant + hash) % 101;
+                if (result < 0) {
+                    result += 101;
+                }
                 return result;
             }
 
