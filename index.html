@@ -77,6 +77,27 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+    <!-- 新增的分享按钮容器 -->
+    <div class="absolute top-4 right-4 z-10">
+        <button id="shareButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg hidden">
+            分享
+        </button>
+    </div>
+
+    <!-- 新增的历史记录折叠栏容器 -->
+    <div class="absolute top-4 left-4 z-10">
+        <button id="historyToggleBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg">
+            历史记录
+        </button>
+        <div id="historyPanel" class="hidden mt-2 w-64 bg-gray-800 rounded-lg shadow-xl p-4 space-y-2">
+            <h3 class="text-lg font-semibold text-gray-300">历史记录</h3>
+            <ul id="historyList" class="space-y-2 text-sm text-gray-400">
+                <!-- History items will be inserted here by JS -->
+            </ul>
+            <p class="text-xs text-gray-500 mt-4">我们不使用您输入的信息，结果仅供娱乐。</p>
+        </div>
+    </div>
+
     <!-- 增加了 container-fade-in class 来实现进入动画 -->
     <div class="w-full max-w-md mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 container-fade-in">
         <!-- Header -->
@@ -121,8 +142,71 @@
             const progressBar = document.getElementById('progressBar');
             const percentageText = document.getElementById('percentageText');
             const resultMessage = document.getElementById('resultMessage');
+            const shareButton = document.getElementById('shareButton'); // 新增
+            const historyToggleBtn = document.getElementById('historyToggleBtn'); // 新增
+            const historyPanel = document.getElementById('historyPanel'); // 新增
+            const historyList = document.getElementById('historyList'); // 新增
 
             let typingInterval; // 用于控制打字机效果的计时器
+
+            // Base64 编码和解码函数
+            function encodeBase64(str) {
+                return btoa(encodeURIComponent(str));
+            }
+
+            function decodeBase64(str) {
+                try {
+                    return decodeURIComponent(atob(str));
+                } catch (e) {
+                    console.error("Base64 decoding failed:", e);
+                    return null;
+                }
+            }
+
+            // 保存历史记录
+            function saveHistory(name, percentage, message) {
+                let history = JSON.parse(localStorage.getItem('gayIndexHistory') || '[]');
+                history.unshift({ name, percentage, message, timestamp: new Date().toLocaleString() }); // 添加到数组开头
+                if (history.length > 10) { // 只保留最新的10条记录
+                    history = history.slice(0, 10);
+                }
+                localStorage.setItem('gayIndexHistory', JSON.stringify(history));
+                renderHistory(); // 更新历史记录显示
+            }
+
+            // 渲染历史记录
+            function renderHistory() {
+                const history = JSON.parse(localStorage.getItem('gayIndexHistory') || '[]');
+                historyList.innerHTML = ''; // 清空现有列表
+                if (history.length === 0) {
+                    historyList.innerHTML = '<li class="text-gray-500">暂无历史记录</li>';
+                    return;
+                }
+                history.forEach((item, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'p-2 bg-gray-700 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-600 transition duration-200';
+                    listItem.innerHTML = `
+                        <div>
+                            <span class="font-semibold text-purple-300">${item.name}</span>: 
+                            <span class="font-bold text-white">${item.percentage}%</span>
+                            <p class="text-xs text-gray-400 mt-1">${item.message}</p>
+                        </div>
+                        <button class="recall-history text-purple-400 hover:text-purple-300 text-sm" data-index="${index}">查看</button>
+                    `;
+                    historyList.appendChild(listItem);
+                });
+            }
+
+            // 从历史记录中加载并显示结果
+            function recallHistoryItem(index) {
+                const history = JSON.parse(localStorage.getItem('gayIndexHistory') || '[]');
+                if (history[index]) {
+                    const item = history[index];
+                    nameInput.value = item.name; // 填充输入框
+                    displayResult(item.name, item.percentage, item.message); // 直接显示结果
+                    historyPanel.classList.add('hidden'); // 折叠历史记录面板
+                }
+            }
 
             function normalizeName(name) {
                 let processedName = name.trim().toLowerCase();
@@ -135,7 +219,7 @@
                 
                 const letters = processedName.replace(/[^a-z]/g, '');
                 const numbers = processedName.replace(/[^0-9]/g, '');
-                const specials = processedName.replace(/[a-z0-9]/g, '');
+                const specials = processedName.replace(/[^a-z0-9]/g, '');
 
                 return { letters, numbers, specials };
             }
@@ -215,9 +299,10 @@
                 }, 50); // 每个字 50 毫秒
             }
 
-            function displayResult(name, percentage) {
+            function displayResult(name, percentage, message = null) { // message 参数现在是可选的
                 resultName.textContent = name;
                 resultSection.classList.remove('hidden');
+                shareButton.classList.remove('hidden'); // 显示分享按钮
                 
                 // 重置样式
                 percentageText.style.opacity = 0;
@@ -238,7 +323,7 @@
                         percentageText.style.opacity = 1;
                         percentageText.classList.add('pop-in'); // 应用弹出动画
                         
-                        const finalMessage = getResultMessage(percentage);
+                        const finalMessage = message || getResultMessage(percentage); // 如果提供了 message，则使用，否则生成
                         typeResultMessage(finalMessage); // 调用打字机效果
 
                         if (currentPercent === 100) {
@@ -246,6 +331,9 @@
                         }
                         
                         setTimeout(() => progressBar.classList.remove('pulsing-glow'), 500);
+
+                        // 保存历史记录
+                        saveHistory(name, percentage, finalMessage);
                     }
                     progressBar.style.width = `${currentPercent}%`;
                     progressBar.style.backgroundColor = getProgressBarColor(currentPercent);
@@ -254,6 +342,38 @@
                        percentageText.style.opacity = 1;
                     }
                 }, 20);
+            }
+
+            async function handleShare() {
+                const name = resultName.textContent;
+                const percentage = parseInt(percentageText.textContent);
+                const message = resultMessage.textContent;
+
+                if (!name || isNaN(percentage) || !message) {
+                    alert('请先计算一个结果再分享！');
+                    return;
+                }
+
+                const dataToEncode = `name=${encodeURIComponent(name)}&percentage=${percentage}&message=${encodeURIComponent(message)}`;
+                const encodedData = encodeBase64(dataToEncode);
+                const longUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+
+                try {
+                    const apiUrl = `https://api.mmp.cc/api/dwz?longurl=${encodeURIComponent(longUrl)}`;
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+
+                    if (result.status === 200 && result.shorturl) {
+                        await navigator.clipboard.writeText(result.shorturl);
+                        alert('短链接已复制到剪贴板：' + result.shorturl);
+                    } else {
+                        alert('短链接生成失败，请稍后再试。');
+                        console.error('Shorten URL API error:', result);
+                    }
+                } catch (error) {
+                    alert('分享失败，请检查网络连接或稍后再试。');
+                    console.error('Share error:', error);
+                }
             }
 
             function handleCalculation() {
@@ -267,6 +387,7 @@
                 btnSpinner.classList.remove('hidden');
                 calculateBtn.disabled = true;
                 resultSection.classList.add('hidden');
+                shareButton.classList.add('hidden'); // 隐藏分享按钮
                 
                 clearInterval(typingInterval); // 如果上次的打字机还在运行，则清除
 
@@ -274,11 +395,31 @@
                     const normalizedParts = normalizeName(originalName);
                     const numericValues = getNumericValues(normalizedParts);
                     const finalPercentage = matrixCalculation(numericValues, originalName);
-                    displayResult(originalName, finalPercentage);
+                    displayResult(originalName, finalPercentage); // displayResult 现在会保存历史记录
                     btnText.classList.remove('hidden');
                     btnSpinner.classList.add('hidden');
                     calculateBtn.disabled = false;
                 }, 800);
+            }
+
+            // 检查URL参数并显示结果
+            function checkUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const encodedData = urlParams.get('data');
+                if (encodedData) {
+                    const decodedData = decodeBase64(encodedData);
+                    if (decodedData) {
+                        const params = new URLSearchParams(decodedData);
+                        const name = params.get('name');
+                        const percentage = parseInt(params.get('percentage'));
+                        const message = params.get('message');
+
+                        if (name && !isNaN(percentage) && message) {
+                            nameInput.value = name; // 填充输入框
+                            displayResult(name, percentage, message); // 显示结果
+                        }
+                    }
+                }
             }
 
             calculateBtn.addEventListener('click', handleCalculation);
@@ -287,6 +428,23 @@
                     handleCalculation();
                 }
             });
+
+            shareButton.addEventListener('click', handleShare); // 分享按钮事件监听
+
+            historyToggleBtn.addEventListener('click', () => { // 历史记录折叠按钮事件监听
+                historyPanel.classList.toggle('hidden');
+            });
+
+            historyList.addEventListener('click', (event) => { // 历史记录列表点击事件委托
+                if (event.target.classList.contains('recall-history')) {
+                    const index = event.target.dataset.index;
+                    recallHistoryItem(index);
+                }
+            });
+
+            // 页面加载时执行
+            renderHistory(); // 渲染历史记录
+            checkUrlParams(); // 检查URL参数
         };
     </script>
 </body>
