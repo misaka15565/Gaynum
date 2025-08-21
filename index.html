@@ -385,7 +385,8 @@
 
             function handleCalculation() {
                 const originalName = nameInput.value;
-                if (!originalName.trim()) {
+                const trimmedName = originalName.trim(); // 去除名字前后的空格
+                if (!trimmedName) { // 使用去除空格后的名字进行检查
                     nameInput.classList.add('shake');
                     setTimeout(() => nameInput.classList.remove('shake'), 500);
                     return;
@@ -399,11 +400,11 @@
                 clearInterval(typingInterval); // 如果上次的打字机还在运行，则清除
 
                 setTimeout(() => {
-                    const normalizedParts = normalizeName(originalName);
+                    const normalizedParts = normalizeName(trimmedName); // 使用去除空格后的名字进行计算
                     const numericValues = getNumericValues(normalizedParts);
-                    const finalPercentage = matrixCalculation(numericValues, originalName);
+                    const finalPercentage = matrixCalculation(numericValues, trimmedName); // 使用去除空格后的名字进行计算
                     // displayResult 现在会根据 name 和 percentage 实时生成 message
-                    displayResult(originalName, finalPercentage); 
+                    displayResult(trimmedName, finalPercentage); // 传递去除空格后的名字
                     btnText.classList.remove('hidden');
                     btnSpinner.classList.add('hidden');
                     calculateBtn.disabled = false;
