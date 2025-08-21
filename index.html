@@ -371,10 +371,7 @@
                 else if (percentage <= 90) selectedTier = messageTiers[90];
                 else selectedTier = messageTiers[100];
 
-                // 使用名字和百分比的哈希值来确定消息索引
-                const combinedString = `${name}-${percentage}`;
-                const hashValue = simpleHash(combinedString);
-                const messageIndex = hashValue % selectedTier.length;
+                const messageIndex = Math.floor(Math.random() * selectedTier.length);
 
                 return selectedTier[messageIndex];
             }
