@@ -88,11 +88,14 @@
         <button id="historyToggleBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg">
             历史记录
         </button>
-        <div id="historyPanel" class="hidden mt-2 w-64 bg-gray-800 rounded-lg shadow-xl p-4 space-y-2">
-            <h3 class="text-lg font-semibold text-gray-300">历史记录</h3>
+        <div id="historyPanel" class="hidden mt-2 w-64 bg-gray-800 rounded-lg shadow-xl p-4 space-y-2 max-h-64 overflow-y-auto">
+            <h3 class="text-lg font-semibold text-gray-300 mb-3">历史记录</h3>
             <ul id="historyList" class="space-y-2 text-sm text-gray-400">
                 <!-- History items will be inserted here by JS -->
             </ul>
+            <button id="clearHistoryBtn" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg text-sm">
+                清除历史记录
+            </button>
             <p class="text-xs text-gray-500 mt-4">我们不使用您输入的信息，结果仅供娱乐。</p>
         </div>
     </div>
@@ -145,6 +148,7 @@
             const historyToggleBtn = document.getElementById('historyToggleBtn'); // 新增
             const historyPanel = document.getElementById('historyPanel'); // 新增
             const historyList = document.getElementById('historyList'); // 新增
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn'); // 新增
 
             let typingInterval; // 用于控制打字机效果的计时器
 
@@ -197,12 +201,12 @@
                     const listItem = document.createElement('li');
                     listItem.className = 'p-2 bg-gray-700 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-600 transition duration-200';
                     listItem.innerHTML = `
-                        <div>
+                        <div class="flex-grow">
                             <span class="font-semibold text-purple-300">${item.name}</span>: 
                             <span class="font-bold text-white">${item.percentage}%</span>
-                            <p class="text-xs text-gray-400 mt-1">${item.message}</p>
+                            <p class="text-xs text-gray-400 mt-1 truncate">${item.message}</p>
                         </div>
-                        <button class="recall-history text-purple-400 hover:text-purple-300 text-sm" data-index="${index}">查看</button>
+                        <button class="recall-history text-purple-400 hover:text-purple-300 text-sm flex-shrink-0 whitespace-nowrap ml-2 px-3 py-1 rounded-md border border-purple-400 hover:bg-purple-700 transition duration-200" data-index="${index}">查看</button>
                     `;
                     historyList.appendChild(listItem);
                 });
@@ -448,6 +452,13 @@
                 if (event.target.classList.contains('recall-history')) {
                     const index = event.target.dataset.index;
                     recallHistoryItem(index);
+                }
+            });
+
+            clearHistoryBtn.addEventListener('click', () => { // 清除历史记录按钮事件监听
+                if (confirm('确定要清除所有历史记录吗？')) {
+                    localStorage.removeItem('gayIndexHistory');
+                    renderHistory(); // 更新历史记录显示
                 }
             });
 
