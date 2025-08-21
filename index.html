@@ -149,6 +149,18 @@
             let typingInterval; // 用于控制打字机效果的计时器
 
             // Base64 编码和解码函数
+            // 简单的哈希函数，用于根据输入生成确定性结果消息
+            function simpleHash(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash |= 0; // Convert to 32bit integer
+                }
+                return Math.abs(hash);
+            }
+
+            // Base64 编码和解码函数
             function encodeBase64(str) {
                 return btoa(encodeURIComponent(str));
             }
@@ -244,7 +256,7 @@
                 return result < 0 ? result + 101 : result;
             }
 
-            function getResultMessage(percentage) {
+            function getResultMessage(percentage, name) { // 增加 name 参数
                 const messageTiers = {
                     0: [ "0%... 你是直尺成精了吗？", "零！你的世界里连彩虹都是黑白的吗？", "成分过纯，建议去钢铁厂上班。", "比我的银行余额还直，令人敬畏。", "检测不到任何弯的迹象，程序可能出错了。" ],
                     10: [ "钢铁直男/女，宇宙都掰不弯你。", "你走过的路，比笔还直。", "身上充满了‘直’气，妖魔鬼怪都得退散。", "别说弯了，你连转个弯都费劲。", "堪称异性恋的最后一道防线。" ],
@@ -264,8 +276,13 @@
                 else if (percentage <= 75) selectedTier = messageTiers[75];
                 else if (percentage <= 90) selectedTier = messageTiers[90];
                 else selectedTier = messageTiers[100];
-                const randomIndex = Math.floor(Math.random() * selectedTier.length);
-                return selectedTier[randomIndex];
+
+                // 使用名字和百分比的哈希值来确定消息索引
+                const combinedString = `${name}-${percentage}`;
+                const hashValue = simpleHash(combinedString);
+                const messageIndex = hashValue % selectedTier.length;
+
+                return selectedTier[messageIndex];
             }
             
             function getProgressBarColor(percentage) {
@@ -321,7 +338,8 @@
                         percentageText.style.opacity = 1;
                         percentageText.classList.add('pop-in'); // 应用弹出动画
                         
-                        const finalMessage = message || getResultMessage(percentage); 
+                        // 如果 message 为 null，则实时生成
+                        const finalMessage = message || getResultMessage(percentage, name); // 传入 name
                         typeResultMessage(finalMessage); // 调用打字机效果
 
                         if (currentPercent === 100) {
@@ -344,15 +362,15 @@
 
             async function handleShare() {
                 const name = resultName.textContent;
-                const percentage = parseInt(percentageText.textContent);
-                const message = resultMessage.textContent;
+                // const percentage = parseInt(percentageText.textContent); // 不再需要
+                // const message = resultMessage.textContent; // 不再需要
 
-                if (!name || isNaN(percentage) || !message) {
+                if (!name) { // 只检查名字
                     alert('请先计算一个结果再分享！');
                     return;
                 }
 
-                const dataToEncode = `name=${encodeURIComponent(name)}&percentage=${percentage}&message=${encodeURIComponent(message)}`;
+                const dataToEncode = `name=${encodeURIComponent(name)}`; // 只编码名字
                 const encodedData = encodeBase64(dataToEncode);
                 const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
 
@@ -384,7 +402,8 @@
                     const normalizedParts = normalizeName(originalName);
                     const numericValues = getNumericValues(normalizedParts);
                     const finalPercentage = matrixCalculation(numericValues, originalName);
-                    displayResult(originalName, finalPercentage); // displayResult 现在会保存历史记录
+                    // displayResult 现在会根据 name 和 percentage 实时生成 message
+                    displayResult(originalName, finalPercentage); 
                     btnText.classList.remove('hidden');
                     btnSpinner.classList.add('hidden');
                     calculateBtn.disabled = false;
@@ -400,12 +419,12 @@
                     if (decodedData) {
                         const params = new URLSearchParams(decodedData);
                         const name = params.get('name');
-                        const percentage = parseInt(params.get('percentage'));
-                        const message = params.get('message');
+                        // const percentage = parseInt(params.get('percentage')); // 不再需要
+                        // const message = params.get('message'); // 不再需要
 
-                        if (name && !isNaN(percentage) && message) {
+                        if (name) { // 只检查名字
                             nameInput.value = name; // 填充输入框
-                            displayResult(name, percentage, message); // 显示结果
+                            handleCalculation(); // 触发计算流程
                         }
                     }
                 }
