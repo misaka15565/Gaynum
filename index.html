@@ -52,14 +52,13 @@
             animation: rainbow-glow 2s linear infinite;
         }
 
-        /* 1. 页面加载时主容器的进入动画 */
         @keyframes initial-fade-in {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
         .container-fade-in { animation: initial-fade-in 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
 
-        /* 2. 结果百分比的“砰”弹出动画 */
+        /* 结果百分比的弹出动画 */
         @keyframes pop-in {
             0% { transform: scale(0.8); opacity: 0; }
             70% { transform: scale(1.1); opacity: 1; }
@@ -67,7 +66,7 @@
         }
         .pop-in { animation: pop-in 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
         
-        /* 3. 进度条的辉光动画 */
+        /* 进度条的辉光动画 */
         @keyframes pulse-glow {
             0%, 100% { box-shadow: 0 0 8px rgba(168, 85, 247, 0.3), 0 0 12px rgba(168, 85, 247, 0.2); }
             50% { box-shadow: 0 0 16px rgba(168, 85, 247, 0.7), 0 0 24px rgba(168, 85, 247, 0.5); }
@@ -77,14 +76,14 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
-    <!-- 新增的分享按钮容器 -->
+    <!-- 分享按钮容器 -->
     <div class="absolute top-4 right-4 z-10">
         <button id="shareButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg hidden">
             分享
         </button>
     </div>
 
-    <!-- 新增的历史记录折叠栏容器 -->
+    <!-- 历史记录折叠栏容器 -->
     <div class="absolute top-4 left-4 z-10">
         <button id="historyToggleBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg">
             历史记录
@@ -284,7 +283,6 @@
                 return colors[colors.length - 1].color;
             }
 
-            // 4. 新增的打字机效果函数
             function typeResultMessage(message) {
                 clearInterval(typingInterval);
                 resultMessage.textContent = '';
@@ -323,7 +321,7 @@
                         percentageText.style.opacity = 1;
                         percentageText.classList.add('pop-in'); // 应用弹出动画
                         
-                        const finalMessage = message || getResultMessage(percentage); // 如果提供了 message，则使用，否则生成
+                        const finalMessage = message || getResultMessage(percentage); 
                         typeResultMessage(finalMessage); // 调用打字机效果
 
                         if (currentPercent === 100) {
